@@ -1,5 +1,5 @@
 apt-get install build-essential
-apt-get install git autoconf automake autogen libpcap-dev libtool
+apt-get install pkg-config autoconf automake autogen libpcap-dev libtool
 ./autogen.sh
 ./configure
 make
