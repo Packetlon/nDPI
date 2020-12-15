@@ -20,8 +20,6 @@
 
 #include "ndpi_protocol_ids.h"
 
-#ifdef NDPI_PROTOCOL_ORACLE
-
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_ORACLE
 
 #include "ndpi_api.h"
@@ -45,7 +43,7 @@ void ndpi_search_oracle(struct ndpi_detection_module_struct *ndpi_struct, struct
     NDPI_LOG_DBG2(ndpi_struct, "calculating ORACLE over tcp\n");
     /* Oracle Database 9g,10g,11g */
     if ((dport == 1521 || sport == 1521)
-	&&  (((packet->payload[0] == 0x07) && (packet->payload[1] == 0xff) && (packet->payload[2] == 0x00))
+	&&  (((packet->payload_packet_len >= 3 && packet->payload[0] == 0x07) && (packet->payload[1] == 0xff) && (packet->payload[2] == 0x00))
 	     || ((packet->payload_packet_len >= 232) && ((packet->payload[0] == 0x00) || (packet->payload[0] == 0x01)) 
 	     && (packet->payload[1] != 0x00)
 	     && (packet->payload[2] == 0x00)
@@ -75,5 +73,3 @@ void init_oracle_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_i
 
   *id += 1;
 }
-
-#endif

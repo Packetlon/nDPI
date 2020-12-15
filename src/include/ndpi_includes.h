@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
@@ -56,7 +57,7 @@
 #if defined __NetBSD__ || defined __OpenBSD__
 #include <netinet/in_systm.h>
 
-#ifdef __OpenBSD__
+#if defined __OpenBSD__
 #include <pthread.h>
 
 #endif
@@ -65,5 +66,11 @@
 #endif
 
 #endif	/* Win32 */
+
+#if defined __OpenBSD__
+#include "ndpi_includes_OpenBSD.h"
+#else
+typedef struct timeval pkt_timeval;
+#endif /* __OpenBSD__ */
 
 #endif /* __NDPI_INCLUDES_H__ */

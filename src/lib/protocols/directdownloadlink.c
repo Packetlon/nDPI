@@ -2,7 +2,7 @@
  * directdownloadlink.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-14svn - ntop.org
+ * Copyright (C) 2011-20 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -24,8 +24,6 @@
 
 
 #include "ndpi_protocol_ids.h"
-
-#ifdef NDPI_PROTOCOL_DIRECT_DOWNLOAD_LINK
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_DIRECT_DOWNLOAD_LINK
 
@@ -58,7 +56,7 @@ u_int8_t search_ddl_domains(struct ndpi_detection_module_struct *ndpi_struct, st
 {
   struct ndpi_packet_struct *packet = &flow->packet;
   u_int16_t filename_start = 0;
-  u_int8_t i = 1;
+  u_int16_t i = 1;
   u_int16_t host_line_len_without_port;
 
   if (packet->payload_packet_len < 100) {
@@ -731,4 +729,4 @@ void init_directdownloadlink_dissector(struct ndpi_detection_module_struct *ndpi
 
   *id += 1;
 }
-#endif
+

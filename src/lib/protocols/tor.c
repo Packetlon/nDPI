@@ -1,13 +1,11 @@
 /*
  * tor.c
  *
- * Copyright (C) 2016 ntop.org
+ * Copyright (C) 2016-18 ntop.org
  * Copyright (C) 2013 Remy Mudingay <mudingay@ill.fr>
  *
  */
 #include "ndpi_protocol_ids.h"
-
-#ifdef NDPI_PROTOCOL_TOR
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_TOR
 
@@ -20,12 +18,12 @@ static void ndpi_int_tor_add_connection(struct ndpi_detection_module_struct
 }
 
 
-int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct,
+int ndpi_is_tls_tor(struct ndpi_detection_module_struct *ndpi_struct,
 		    struct ndpi_flow_struct *flow, char *certificate) {  
-  int prev_num = 0, numbers_found = 0, num_found = 0, i, len;
+  int len;
   char dummy[48], *dot, *name;
-
-  if(certificate == NULL)
+  
+  if((certificate == NULL) || (certificate[0] == '\0'))
     return(0);
   else
     len = strlen(certificate);
@@ -50,45 +48,16 @@ int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct,
   if((dot = strrchr(dummy, '.')) == NULL) return(0);
   name = &dot[1];
 
-  len = strlen(name);
-  
-  if(len >= 5) {
-    for(i = 0; name[i+1] != '\0'; i++) {
-      // printf("***** [SSL] %s(): [%d][%c]", __FUNCTION__, i, name[i]);
-      
-      if((name[i] >= '0') && (name[i] <= '9')) {
-	if(prev_num != 1) {
-	  numbers_found++;
-
-	  if(numbers_found == 2) {
-	    ndpi_int_tor_add_connection(ndpi_struct, flow);
-	    return(1);
-	  }
-	  prev_num = 1;
-	}
-      } else
-	prev_num = 0;
-
-      
-      if(ndpi_match_bigram(ndpi_struct, &ndpi_struct->bigrams_automa, &name[i])) {
-	num_found++;
-      } else if(ndpi_match_bigram(ndpi_struct, &ndpi_struct->impossible_bigrams_automa, &name[i])) {
-	ndpi_int_tor_add_connection(ndpi_struct, flow);
-	return(1);
-      }
-    }
-
-    if(num_found == 0) {
+  if(ndpi_check_dga_name(ndpi_struct, flow, name, 1)) {
+    ndpi_int_tor_add_connection(ndpi_struct, flow);
+    return(1);
+  } else {
+#ifdef PEDANTIC_TOR_CHECK
+    if(gethostbyname(certificate) == NULL) {
       ndpi_int_tor_add_connection(ndpi_struct, flow);
       return(1);
-    } else {
-#ifdef PEDANTIC_TOR_CHECK
-      if(gethostbyname(certificate) == NULL) {
-	ndpi_int_tor_add_connection(ndpi_struct, flow);
-	return(1);
-      }
-#endif
     }
+#endif
   }
 
   return(0);
@@ -99,11 +68,13 @@ int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct,
 void ndpi_search_tor(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
-  u_int16_t dport = 0, sport = 0;
 
   NDPI_LOG_DBG(ndpi_struct, "search for TOR\n");
 
-  if(packet->tcp != NULL) {
+  if((packet->tcp != NULL)
+     && (!packet->tls_certificate_detected)) {
+    u_int16_t dport, sport;
+    
     sport = ntohs(packet->tcp->source), dport = ntohs(packet->tcp->dest);
     NDPI_LOG_DBG2(ndpi_struct, "calculating TOR over tcp\n");
 
@@ -133,4 +104,3 @@ void init_tor_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int3
   *id += 1;
 }
 
-#endif

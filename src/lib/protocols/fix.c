@@ -1,7 +1,7 @@
 /*
  * fix.c
  *
- * Copyright (C) 2017 - ntop.org
+ * Copyright (C) 2017-20 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -23,8 +23,6 @@
 
 #include "ndpi_protocol_ids.h"
 
-#ifdef NDPI_PROTOCOL_FIX
-
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_FIX
 
 #include "ndpi_api.h"
@@ -35,7 +33,7 @@ void ndpi_search_fix(struct ndpi_detection_module_struct *ndpi_struct, struct nd
   struct ndpi_packet_struct *packet = &flow->packet;
 
   NDPI_LOG_DBG(ndpi_struct, "search FIX\n");
-  if(packet->tcp) {
+  if(packet->tcp && packet->payload_packet_len > 5) {
     // 8=
     if(packet->payload[0] == 0x38 && packet->payload[1] == 0x3d) {
       // FIX.
@@ -75,6 +73,3 @@ void init_fix_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int3
 				      ADD_TO_DETECTION_BITMASK);
   *id += 1;
 }
-
-
-#endif

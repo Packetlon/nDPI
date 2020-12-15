@@ -1,7 +1,7 @@
 /*
  * ayiya.c
  *
- * Copyright (C) 2011-15 - ntop.org
+ * Copyright (C) 2011-20 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -27,8 +27,6 @@
 */
 
 #include "ndpi_protocol_ids.h"
-
-#ifdef NDPI_PROTOCOL_AYIYA
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_AYIYA
 
@@ -59,7 +57,7 @@ void ndpi_search_ayiya(struct ndpi_detection_module_struct *ndpi_struct, struct 
       u_int32_t epoch = ntohl(a->epoch), now;
       u_int32_t fiveyears = 86400 * 365 * 5;
 
-      now = flow->packet.tick_timestamp;
+      now = flow->packet.current_time_ms;
 
       if((epoch >= (now - fiveyears)) && (epoch <= (now+86400 /* 1 day */))) {
 	NDPI_LOG_INFO(ndpi_struct, "found AYIYA\n");
@@ -85,5 +83,3 @@ void init_ayiya_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_in
 
   *id += 1;
 }
-
-#endif

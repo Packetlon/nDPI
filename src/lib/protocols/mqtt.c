@@ -23,8 +23,6 @@
 
 #include "ndpi_protocol_ids.h"
 
-#ifdef NDPI_PROTOCOL_MQTT
-
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_MQTT
 
 #include "ndpi_api.h"
@@ -81,7 +79,11 @@ void ndpi_search_mqtt (struct ndpi_detection_module_struct *ndpi_struct,
 	}
 
 	NDPI_LOG_DBG2(ndpi_struct, "====>>>> Mqtt header: %4x%4x%4x%4x [len: %u]\n",
-			packet->payload[0], packet->payload[1], packet->payload[2], packet->payload[3], packet->payload_packet_len);
+		      packet->payload_packet_len > 0 ? packet->payload[0] : '.',
+		      packet->payload_packet_len > 1 ? packet->payload[1] : '.',
+		      packet->payload_packet_len > 2 ? packet->payload[2] : '.',
+		      packet->payload_packet_len > 3 ? packet->payload[3] : '.',
+		      packet->payload_packet_len);
 	if (packet->payload_packet_len < 2) {
 		NDPI_LOG_DBG(ndpi_struct, "Excluding Mqtt .. mandatory header not found!\n");
 		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MQTT);
@@ -232,7 +234,7 @@ void ndpi_search_mqtt (struct ndpi_detection_module_struct *ndpi_struct,
 			NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MQTT);
 			return;
 		} else {
-			NDPI_LOG_INFO(ndpi_struct, "found Mqtt UNSUBSCRIBE\n",pt);
+			NDPI_LOG_INFO(ndpi_struct, "found Mqtt UNSUBSCRIBE\n");
 			ndpi_int_mqtt_add_connection(ndpi_struct,flow);
 			return;
 		}
@@ -255,5 +257,4 @@ void init_mqtt_dissector (struct ndpi_detection_module_struct *ndpi_struct,
 	*id +=1;
 }
 
-#endif // NDPI_PROTOCOL_MQTT
 

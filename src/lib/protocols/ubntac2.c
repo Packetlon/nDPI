@@ -21,12 +21,9 @@
 
 #include "ndpi_protocol_ids.h"
 
-#ifdef NDPI_PROTOCOL_UBNTAC2
-
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_UBNTAC2
 
 #include "ndpi_api.h"
-
 
 static void ndpi_int_ubntac2_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
@@ -53,23 +50,23 @@ void ndpi_search_ubntac2(struct ndpi_detection_module_struct *ndpi_struct, struc
       }
 
       if(found) {
-	char version[256];
-	int i, j, len;
-	
 	found += packet->payload[found+1] + 4; /* Skip model name */
-	found++; /* Skip len*/
+	found++; /* Skip len */
 	
 	if(found < packet->payload_packet_len) {
-	  for(i=found, j=0; (packet->payload[i] != 0) && (i < packet->payload_packet_len) && (i < (sizeof(version)-1)); i++)
+	  char version[256];
+	  int i, j, len;
+	  
+	  for(i=found, j=0; (i < packet->payload_packet_len)
+		&& (i < (sizeof(version)-1))
+		&& (packet->payload[i] != 0); i++)
 	    version[j++] = packet->payload[i];
 	  
 	  version[j] = '\0';
 
-	  if(!ndpi_struct->disable_metadata_export) {
-	    len = ndpi_min(sizeof(flow->protos.ubntac2.version)-1, j);
-	    strncpy(flow->protos.ubntac2.version, (const char *)version, len);
-	    flow->protos.ubntac2.version[len] = '\0';
-	  }
+	  len = ndpi_min(sizeof(flow->protos.ubntac2.version)-1, j);
+	  strncpy(flow->protos.ubntac2.version, (const char *)version, len);
+	  flow->protos.ubntac2.version[len] = '\0';
 	}
 	
 	NDPI_LOG_INFO(ndpi_struct, "UBNT AirControl 2 request\n");
@@ -94,5 +91,3 @@ void init_ubntac2_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_
 				      ADD_TO_DETECTION_BITMASK);
   *id += 1;
 }
-
-#endif

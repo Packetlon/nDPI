@@ -2,7 +2,7 @@
  * jabber.c
  *
  * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-15 - ntop.org
+ * Copyright (C) 2011-20 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -24,9 +24,7 @@
 
 #include "ndpi_protocol_ids.h"
 
-#ifdef NDPI_PROTOCOL_UNENCRYPTED_JABBER
-
-#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_UNENCRYPTED_JABBER
+#define NDPI_CURRENT_PROTO NDPI_PROTOCOL_JABBER
 
 #include "ndpi_api.h"
 
@@ -36,10 +34,8 @@ struct jabber_string {
 };
 
 static struct jabber_string jabber_strings[] = {
-#ifdef NDPI_PROTOCOL_TRUPHONE
   { "='im.truphone.com'",     NDPI_PROTOCOL_TRUPHONE },
   { "=\"im.truphone.com\"",   NDPI_PROTOCOL_TRUPHONE },
-#endif
   { NULL, 0 }
 };
 
@@ -85,9 +81,9 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
 		ntohs(src->jabber_file_transfer_port[0]),
 		ntohs(src->jabber_file_transfer_port[1]));
       if (((u_int32_t)
-	   (packet->tick_timestamp - src->jabber_stun_or_ft_ts)) >= ndpi_struct->jabber_file_transfer_timeout) {
+	   (packet->current_time_ms - src->jabber_stun_or_ft_ts)) >= ndpi_struct->jabber_file_transfer_timeout) {
 	NDPI_LOG_DBG2(ndpi_struct, "JABBER src stun timeout %u %u\n",
-			src->jabber_stun_or_ft_ts, packet->tick_timestamp);
+			src->jabber_stun_or_ft_ts, packet->current_time_ms);
 	src->jabber_file_transfer_port[0] = 0;
 	src->jabber_file_transfer_port[1] = 0;
       } else if (src->jabber_file_transfer_port[0] == packet->tcp->dest
@@ -97,7 +93,7 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
 	NDPI_LOG_INFO(ndpi_struct, "found jabber file transfer\n");
 
 	ndpi_int_jabber_add_connection(ndpi_struct, flow,
-				       NDPI_PROTOCOL_UNENCRYPTED_JABBER);
+				       NDPI_PROTOCOL_JABBER);
       }
     }
     if (dst != NULL && dst->jabber_file_transfer_port[0] != 0) {
@@ -105,9 +101,9 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
 		ntohs(dst->jabber_file_transfer_port[0]),
 		ntohs(dst->jabber_file_transfer_port[1]));
       if (((u_int32_t)
-	   (packet->tick_timestamp - dst->jabber_stun_or_ft_ts)) >= ndpi_struct->jabber_file_transfer_timeout) {
+	   (packet->current_time_ms - dst->jabber_stun_or_ft_ts)) >= ndpi_struct->jabber_file_transfer_timeout) {
 	NDPI_LOG_DBG2(ndpi_struct, "JABBER dst stun timeout %u %u\n",
-			dst->jabber_stun_or_ft_ts, packet->tick_timestamp);
+			dst->jabber_stun_or_ft_ts, packet->current_time_ms);
 	dst->jabber_file_transfer_port[0] = 0;
 	dst->jabber_file_transfer_port[1] = 0;
       } else if (dst->jabber_file_transfer_port[0] == packet->tcp->dest
@@ -117,7 +113,7 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
 	NDPI_LOG_INFO(ndpi_struct, "found jabber file transfer\n");
 
 	ndpi_int_jabber_add_connection(ndpi_struct, flow,
-				       NDPI_PROTOCOL_UNENCRYPTED_JABBER);
+				       NDPI_PROTOCOL_JABBER);
       }
     }
     return;
@@ -129,7 +125,7 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
 
 
   /* this part parses a packet and searches for port=. it works asymmetrically. */
-  if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_UNENCRYPTED_JABBER) {
+  if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_JABBER) {
     u_int16_t lastlen;
     u_int16_t j_port = 0;
     /* check for google jabber voip connections ... */
@@ -139,7 +135,7 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
       return;
     }
     /* need message to or type for file-transfer */
-    if (memcmp(packet->payload, "<iq from=\"", 8) == 0 || memcmp(packet->payload, "<iq from=\'", 8) == 0) {
+    if (memcmp(packet->payload, "<iq from=\"", 10) == 0 || memcmp(packet->payload, "<iq from=\'", 10) == 0) {
       NDPI_LOG_DBG2(ndpi_struct, "JABBER <iq from=\"\n");
       lastlen = packet->payload_packet_len - 11;
       for (x = 10; x < lastlen; x++) {
@@ -147,11 +143,11 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
 	  if (memcmp(&packet->payload[x], "port=", 5) == 0) {
 	    NDPI_LOG_DBG2(ndpi_struct, "port=\n");
 	    if (src != NULL) {
-	      src->jabber_stun_or_ft_ts = packet->tick_timestamp;
+	      src->jabber_stun_or_ft_ts = packet->current_time_ms;
 	    }
 
 	    if (dst != NULL) {
-	      dst->jabber_stun_or_ft_ts = packet->tick_timestamp;
+	      dst->jabber_stun_or_ft_ts = packet->current_time_ms;
 	    }
 	    x += 6;
 	    j_port = ntohs_ndpi_bytestream_to_number(&packet->payload[x], packet->payload_packet_len, &x);
@@ -208,11 +204,11 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
 	  if (memcmp(&packet->payload[x], "port=", 5) == 0) {
 	    NDPI_LOG_DBG2(ndpi_struct, "port=\n");
 	    if (src != NULL) {
-	      src->jabber_stun_or_ft_ts = packet->tick_timestamp;
+	      src->jabber_stun_or_ft_ts = packet->current_time_ms;
 	    }
 
 	    if (dst != NULL) {
-	      dst->jabber_stun_or_ft_ts = packet->tick_timestamp;
+	      dst->jabber_stun_or_ft_ts = packet->current_time_ms;
 	    }
 
 	    x += 6;
@@ -274,7 +270,7 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
        || ndpi_strnstr((const char *)&packet->payload[13], "xmlns:stream=\"http://etherx.jabber.org/streams\"", start)) {
   
       /* Protocol family */
-      ndpi_int_jabber_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_UNENCRYPTED_JABBER);
+      ndpi_int_jabber_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_JABBER);
 
       /* search for subprotocols */
       check_content_type_and_change_protocol(ndpi_struct, flow, 13);
@@ -289,16 +285,15 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
 
   NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
 
-#ifdef NDPI_PROTOCOL_TRUPHONE
-  ndpi_exclude_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TRUPHONE,__FILE__,__FUNCTION__,__LINE__);
-#endif
+  ndpi_exclude_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TRUPHONE,
+			__FILE__,__FUNCTION__,__LINE__);
 }
 
 
 void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
-  ndpi_set_bitmask_protocol_detection("Unencrypted_Jabber", ndpi_struct, detection_bitmask, *id,
-				      NDPI_PROTOCOL_UNENCRYPTED_JABBER,
+  ndpi_set_bitmask_protocol_detection("Jabber", ndpi_struct, detection_bitmask, *id,
+				      NDPI_PROTOCOL_JABBER,
 				      ndpi_search_jabber_tcp,
 				      NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_OR_UDP_WITHOUT_RETRANSMISSION,
 				      SAVE_DETECTION_BITMASK_AS_UNKNOWN,
@@ -306,4 +301,4 @@ void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_i
 
   *id += 1;
 }
-#endif
+

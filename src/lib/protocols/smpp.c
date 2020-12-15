@@ -2,7 +2,7 @@
  * smpp.c
  * 
  * Copyright (C) 2016 - Damir Franusic <df@release14.org>
- * Copyright (C) 2016 - ntop.org
+ * Copyright (C) 2016-20 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,8 +21,6 @@
 
 
 #include "ndpi_protocol_ids.h"
-
-#ifdef NDPI_PROTOCOL_SMPP
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_SMPP
 
@@ -70,7 +68,7 @@ void ndpi_search_smpp_tcp(struct ndpi_detection_module_struct* ndpi_struct,
       u_int32_t tmp_pdu_l = 0;
       u_int16_t pdu_c = 1;
       // loop PDUs (check if lengths are valid)
-      while(total_pdu_l < packet->payload_packet_len) {
+      while(total_pdu_l < (packet->payload_packet_len-4)) {
 	// get next PDU length
 	tmp_pdu_l = ntohl(get_u_int32_t(packet->payload, total_pdu_l));
 	// if zero or overflowing , return, will try the next TCP segment
@@ -319,5 +317,3 @@ void init_smpp_dissector(struct ndpi_detection_module_struct* ndpi_struct,
 
   *id += 1;
 }
-
-#endif // NDPI_PROTOCOL_SMPP

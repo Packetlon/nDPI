@@ -23,8 +23,6 @@
 
 #include "ndpi_protocol_ids.h"
 
-#ifdef NDPI_PROTOCOL_COAP
-
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_COAP
 
 #include "ndpi_api.h"
@@ -131,8 +129,8 @@ void ndpi_search_coap (struct ndpi_detection_module_struct *ndpi_struct,
     // check values in header
     if(h->version == 1) {
       if(h->type == CON || h->type == NO_CON || h->type == ACK || h->type == RST ) {
-	if(h->tkl == 0 || h->tkl < 8) {
-	  if((h->code >= 0 && h->code <= 5) || (h->code >= 65 && h->code <= 69) ||
+	if(h->tkl < 8) {
+	  if((/* h->code >= 0 && */ h->code <= 5) || (h->code >= 65 && h->code <= 69) ||
 	     (h->code >= 128  && h->code <= 134) || (h->code >= 140 && h->code <= 143) ||
 	     (h->code >= 160 && h->code <= 165)) {
 
@@ -163,5 +161,3 @@ void init_coap_dissector (struct ndpi_detection_module_struct *ndpi_struct,
   *id +=1;
 }
 
-
-#endif // NDPI_PROTOCOL_COAP

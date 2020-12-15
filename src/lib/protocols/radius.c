@@ -1,7 +1,7 @@
 /*
  * radius.c
  *
- * Copyright (C) 2012-15 - ntop.org
+ * Copyright (C) 2012-20 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,8 +19,6 @@
  */
 
 #include "ndpi_protocol_ids.h"
-
-#ifdef NDPI_PROTOCOL_RADIUS
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_RADIUS
 
@@ -41,16 +39,21 @@ static void ndpi_check_radius(struct ndpi_detection_module_struct *ndpi_struct, 
 
   if(packet->udp != NULL) {
     struct radius_header *h = (struct radius_header*)packet->payload;
-
-    if((payload_len > sizeof(struct radius_header))
-       && (h->code > 0)
-       && (h->code <= 5)
+    /* RFC2865: The minimum length is 20 and maximum length is 4096. */
+    if((payload_len < 20) || (payload_len > 4096)) {
+      NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
+      return;
+    }
+    
+    if((h->code > 0)
+       && (h->code <= 13)
        && (ntohs(h->len) == payload_len)) {
       NDPI_LOG_INFO(ndpi_struct, "Found radius\n");
       ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RADIUS, NDPI_PROTOCOL_UNKNOWN);
 
       return;
     }
+    
     NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     return;
   }
@@ -79,5 +82,3 @@ void init_radius_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_i
 
   *id += 1;
 }
-
-#endif

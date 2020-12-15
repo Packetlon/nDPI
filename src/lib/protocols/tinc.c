@@ -2,7 +2,7 @@
  * tinc.c
  *
  * Copyright (C) 2017 - William Guglielmo <william@deselmo.com>
- * Copyright (C) 2017 - ntop.org
+ * Copyright (C) 2017-20 - ntop.org
  *
  * nDPI is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -19,8 +19,6 @@
  *
  */
 #include "ndpi_protocol_ids.h"
-
-#ifdef NDPI_PROTOCOL_TINC
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_TINC
 
@@ -60,9 +58,9 @@ static void ndpi_check_tinc(struct ndpi_detection_module_struct *ndpi_struct, st
         ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TINC, NDPI_PROTOCOL_UNKNOWN);
       }
     }
-
+    
+    NDPI_EXCLUDE_PROTO(ndpi_struct, flow);
     return;
-
   } else if(packet->tcp != NULL) {
     if(payload_len == 0) {
       if(packet->tcp->syn == 1 && packet->tcp->ack == 0) {
@@ -154,4 +152,3 @@ void init_tinc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int
   *id += 1;
 }
 
-#endif

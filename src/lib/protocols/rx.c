@@ -1,7 +1,7 @@
 /*
  * rx.c
  *
- * Copyright (C) 2012-16 - ntop.org
+ * Copyright (C) 2012-20 - ntop.org
  *
  * Giovanni Mascellani <gio@debian.org>
  *
@@ -24,8 +24,6 @@
  */
 #include "ndpi_protocol_ids.h"
 
-
-#ifdef NDPI_PROTOCOL_RX
 
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_RX
 
@@ -131,19 +129,24 @@ void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
 	   header->flags == PLUS_2 || header->flags == REQ_ACK ||
 	   header->flags == MORE_1)
 	  goto security;
+	/* Fall-through */
       case ACK:
 	if(header->flags == CLIENT_INIT_1 || header->flags == CLIENT_INIT_2 ||
 	   header->flags == EMPTY)
 	  goto security;
+	/* Fall-through */
       case CHALLENGE:
 	if(header->flags == EMPTY || header->call_number == 0)
 	  goto security;
+	/* Fall-through */
       case RESPONSE:
 	if(header->flags == EMPTY || header->call_number == 0)
 	  goto security;
+	/* Fall-through */
       case ACKALL:
 	if(header->flags == EMPTY)
 	  goto security;
+	/* Fall-through */
       case BUSY:
 	goto security;
       case ABORT:
@@ -227,4 +230,3 @@ void init_rx_dissector(struct ndpi_detection_module_struct *ndpi_struct,
   *id += 1;
 }
 
-#endif

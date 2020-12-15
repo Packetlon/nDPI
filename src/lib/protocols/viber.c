@@ -2,7 +2,7 @@
  * viber.c 
  *
  * Copyright (C) 2013 Remy Mudingay <mudingay@ill.fr>
- * Copyright (C) 2013 - 2014 ntop.org
+ * Copyright (C) 2013-18 - ntop.org
  *
  * This module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -20,8 +20,6 @@
 
 #include "ndpi_protocol_ids.h"
 
-#ifdef NDPI_PROTOCOL_VIBER
-
 #define NDPI_CURRENT_PROTO NDPI_PROTOCOL_VIBER
 
 #include "ndpi_api.h"
@@ -33,12 +31,15 @@ void ndpi_search_viber(struct ndpi_detection_module_struct *ndpi_struct, struct 
   
   NDPI_LOG_DBG(ndpi_struct, "search for VIBER\n");
   
-  if(packet->udp != NULL) {
+  if((packet->udp != NULL) && (packet->payload_packet_len > 5)) {
     NDPI_LOG_DBG2(ndpi_struct, "calculating dport over udp\n");
 
-    if((packet->payload_packet_len == 12 && packet->payload[2] == 0x03 && packet->payload[3] == 0x00)
+    if((packet->payload[2] == 0x03 && packet->payload[3] == 0x00)
        || (packet->payload_packet_len == 20 && packet->payload[2] == 0x09 && packet->payload[3] == 0x00)
-       || ((packet->payload_packet_len < 135) && (packet->payload[0] == 0x11))) {
+       || (packet->payload[2] == 0x01 && packet->payload[3] == 0x00 && packet->payload[4] == 0x05 && packet->payload[5] == 0x00)
+       || (packet->payload_packet_len == 34 && packet->payload[2] == 0x19 && packet->payload[3] == 0x00)
+       || (packet->payload_packet_len == 34 && packet->payload[2] == 0x1b && packet->payload[3] == 0x00)
+       ) {
       NDPI_LOG_DBG(ndpi_struct, "found VIBER\n");
       ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VIBER, NDPI_PROTOCOL_UNKNOWN);
       return;
@@ -61,5 +62,3 @@ void init_viber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_in
   *id += 1;
 }
 
-
-#endif
